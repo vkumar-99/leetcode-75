@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: webapp-deployment
+spec:
+    replicas: 3
+    selector:
+        matchLables:
+            app: my-webapp
+    template:
+        metadata:
+            labels:
+                app: my-webapp
+        spec:
+            containers:
+                - name: webapp
+                  image: nginx:latest
+                  envFrom:
+                    - configMapRef:
+                        name: webapp-config
+                - name: database
+                  image: mongo:latest
+                  env:
+                    - name: MONGO_INIT_ROOT_USERNAME
+                      valueFrom:
+                        secretKeyRef:
+                            name: db-credentials
+                            key: username
+                    - name: MONGO_INIT_ROOT_PASSWORD
+                      valueFrom:
+                        secretKeyRef:
+                            name: db-credentials
+                            key: password
+                  volumeMounts:
+                    - name: db-data
+                      mountPath: /data/db
+    volumes:
+        - name: db-data
+          persistentVolumeClaim:
+            claimName: database-pvc
